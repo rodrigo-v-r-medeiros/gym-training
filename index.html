@@ -1,0 +1,730 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Gym Tracker | Rodrigo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      safelist: [
+        'border-blue-500','bg-blue-500',
+        'border-red-500','bg-red-500',
+        'border-amber-500','bg-amber-500',
+        'border-violet-500','bg-violet-500',
+        'border-emerald-500','bg-emerald-500',
+      ]
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; }
+    body { -webkit-font-smoothing: antialiased; }
+    .tab { display: none; }
+    .tab.active { display: block; }
+    .ex-body { max-height: 0; overflow: hidden; transition: max-height .3s ease; }
+    .ex-body.open { max-height: 900px; }
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+    input[type=number] { -moz-appearance: textfield; }
+    ::-webkit-scrollbar { width: 3px; height: 3px; }
+    ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 2px; }
+    .scroll-x { overflow-x: auto; scrollbar-width: none; }
+    .scroll-x::-webkit-scrollbar { display: none; }
+    .inp { background:#27272a;border:1px solid #3f3f46;color:#f4f4f5;border-radius:12px;padding:9px 12px;font-size:14px;width:100%;outline:none; }
+    .inp:focus { border-color:#b3ff00; }
+    .inp-sm { background:#27272a;border:1px solid #3f3f46;color:#f4f4f5;border-radius:8px;padding:7px 6px;font-size:13px;width:100%;outline:none;text-align:center; }
+    .inp-sm:focus { border-color:#b3ff00; }
+    .inp-pw { background:#27272a;border:1px solid #3f3f46;color:#f4f4f5;border-radius:12px;padding:9px 12px;font-size:14px;width:100%;outline:none; }
+    .inp-pw:focus { border-color:#60a5fa; }
+    select.inp option { background:#27272a; }
+  </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen pb-20 antialiased">
+<div class="max-w-md mx-auto relative">
+
+<!-- ───── HEADER ───── -->
+<header class="sticky top-0 z-50 bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800 px-4 pt-3 pb-2.5">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-[17px] font-black tracking-widest" style="color:#b3ff00">⚡ GYM TRACKER</h1>
+      <p class="text-zinc-500 text-[11px] mt-0.5">Rodrigo · Natural · PPL + Upper/Lower · 4+1</p>
+    </div>
+  </div>
+</header>
+
+<main class="px-4 pt-4">
+
+<!-- ═══════════════════ TAB: TREINO ═══════════════════ -->
+<div id="tab-treino" class="tab active">
+  <h2 class="text-xl font-black mb-4">Treino</h2>
+
+  <!-- Week tracker -->
+  <div class="bg-zinc-900 rounded-2xl border border-zinc-800 p-4 mb-3">
+    <p class="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-3">Semana do Ciclo (4+1)</p>
+    <div id="week-grid" class="grid grid-cols-5 gap-2 mb-3"></div>
+    <p id="week-label" class="text-[12px] leading-relaxed"></p>
+  </div>
+
+  <!-- Cycle map -->
+  <div class="bg-zinc-900 rounded-2xl border border-zinc-800 p-4 mb-3">
+    <p class="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-3">Ciclo Semanal</p>
+    <div class="grid grid-cols-7 gap-1 text-[10px] text-center">
+      <div class="text-zinc-500 font-bold pb-1">Seg</div>
+      <div class="text-zinc-500 font-bold pb-1">Ter</div>
+      <div class="text-zinc-500 font-bold pb-1">Qua</div>
+      <div class="text-zinc-500 font-bold pb-1">Qui</div>
+      <div class="text-zinc-500 font-bold pb-1">Sex</div>
+      <div class="text-zinc-500 font-bold pb-1">Sáb</div>
+      <div class="text-zinc-500 font-bold pb-1">Dom</div>
+      <div class="rounded-lg py-1.5 font-black" style="background:rgba(96,165,250,.18);color:#60a5fa">Pull</div>
+      <div class="rounded-lg py-1.5 font-black" style="background:rgba(248,113,113,.18);color:#f87171">Push</div>
+      <div class="rounded-lg py-1.5 font-black" style="background:rgba(251,191,36,.18);color:#fbbf24">Legs</div>
+      <div class="rounded-lg py-1.5 font-bold bg-zinc-800 text-zinc-600">—</div>
+      <div class="rounded-lg py-1.5 font-black" style="background:rgba(196,181,253,.18);color:#c4b5fd">Upper</div>
+      <div class="rounded-lg py-1.5 font-black" style="background:rgba(110,231,183,.18);color:#6ee7b7">Lower</div>
+      <div class="rounded-lg py-1.5 font-bold bg-zinc-800 text-zinc-600">—</div>
+    </div>
+  </div>
+
+  <div class="scroll-x flex gap-2 mb-3" id="treino-day-chips"></div>
+  <div id="treino-exercises"></div>
+</div>
+
+<!-- ═══════════════════ TAB: DIETA ═══════════════════ -->
+<div id="tab-dieta" class="tab">
+  <h2 class="text-xl font-black mb-4">Dieta Cutting</h2>
+
+  <div class="bg-zinc-900 rounded-2xl border border-zinc-800 p-4 mb-3">
+    <div class="grid grid-cols-4 gap-3 text-center">
+      <div>
+        <div class="text-2xl font-black" style="color:#b3ff00">1850</div>
+        <div class="text-[10px] text-zinc-500 mt-0.5">kcal</div>
+      </div>
+      <div>
+        <div class="text-2xl font-black text-blue-400">145g</div>
+        <div class="text-[10px] text-zinc-500 mt-0.5">Prot</div>
+      </div>
+      <div>
+        <div class="text-2xl font-black text-amber-400">220g</div>
+        <div class="text-[10px] text-zinc-500 mt-0.5">Carbo</div>
+      </div>
+      <div>
+        <div class="text-2xl font-black text-red-400">60g</div>
+        <div class="text-[10px] text-zinc-500 mt-0.5">Gordu</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-3 gap-2 mb-4">
+    <div class="bg-zinc-900 rounded-2xl border border-zinc-800 p-3 text-center">
+      <div class="text-xl font-black" style="color:#b3ff00">4L+</div>
+      <div class="text-[10px] text-zinc-500 mt-1">Água/dia</div>
+    </div>
+    <div class="bg-zinc-900 rounded-2xl border border-zinc-800 p-3 text-center">
+      <div class="text-xl font-black text-violet-400">30min</div>
+      <div class="text-[10px] text-zinc-500 mt-1">Cárdio</div>
+    </div>
+    <div class="bg-zinc-900 rounded-2xl border border-zinc-800 p-3 text-center">
+      <div class="text-xl font-black text-blue-400">120</div>
+      <div class="text-[10px] text-zinc-500 mt-1">BPM</div>
+    </div>
+  </div>
+
+  <div id="meal-list"></div>
+</div>
+
+<!-- ═══════════════════ TAB: REGISTRAR ═══════════════════ -->
+<div id="tab-log" class="tab">
+  <h2 class="text-xl font-black mb-4">Registrar Treino</h2>
+
+  <div class="bg-zinc-900 rounded-2xl border border-zinc-800 p-4 mb-4">
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-[11px] text-zinc-400 font-bold uppercase tracking-wider mb-1.5">Data</label>
+        <input type="date" id="log-date" class="inp" />
+      </div>
+      <div>
+        <label class="block text-[11px] text-zinc-400 font-bold uppercase tracking-wider mb-1.5">Semana</label>
+        <select id="log-week" class="inp">
+          <option value="1">Semana 1</option>
+          <option value="2">Semana 2</option>
+          <option value="3">Semana 3</option>
+          <option value="4">Semana 4</option>
+          <option value="5">Deload (S5)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <p class="text-[11px] text-zinc-400 font-bold uppercase tracking-wider mb-2">Dia de treino</p>
+  <div class="scroll-x flex gap-2 mb-4" id="log-day-chips"></div>
+  <div id="log-exercises"></div>
+
+  <button id="btn-save" class="w-full py-3.5 rounded-2xl font-black text-sm text-black mt-2 mb-6 transition-opacity active:opacity-75" style="background:#b3ff00">
+    Salvar Sessão
+  </button>
+
+  <div class="border-t border-zinc-800 pt-5">
+    <p class="text-[11px] text-zinc-400 font-bold uppercase tracking-wider mb-3">Backup & Sincronização</p>
+
+    <!-- Export / Import -->
+    <div class="grid grid-cols-2 gap-2 mb-4">
+      <button id="btn-export" class="py-2.5 rounded-xl text-sm font-bold text-zinc-300 bg-zinc-800 border border-zinc-700 hover:border-zinc-500 transition-colors">
+        ⬇ Exportar JSON
+      </button>
+      <label class="py-2.5 rounded-xl text-sm font-bold text-zinc-300 bg-zinc-800 border border-zinc-700 hover:border-zinc-500 transition-colors cursor-pointer text-center block">
+        ⬆ Importar JSON
+        <input type="file" id="import-file" accept=".json" class="hidden" />
+      </label>
+    </div>
+
+    <!-- GitHub Repo Sync -->
+    <div class="bg-zinc-900 rounded-2xl border border-zinc-800 p-4">
+      <div class="flex items-center gap-2 mb-3">
+        <svg class="w-4 h-4 text-zinc-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+        <span class="text-sm font-bold text-zinc-200">GitHub Repo Sync</span>
+        <span class="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-400">salva data.json no repo</span>
+      </div>
+
+      <div class="space-y-2 mb-3">
+        <input id="repo-token" type="password" placeholder="GitHub Personal Access Token (scope: repo)" class="inp-pw" />
+        <input id="repo-owner" type="text" placeholder="Seu usuário GitHub (ex: joao123)" class="inp-pw" />
+        <input id="repo-repo" type="text" placeholder="Nome do repositório (ex: gym-training)" class="inp-pw" />
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <button id="btn-repo-push" class="py-2.5 rounded-xl text-xs font-black text-blue-400 bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 transition-colors">
+          ↑ Salvar no Repo
+        </button>
+        <button id="btn-repo-pull" class="py-2.5 rounded-xl text-xs font-black text-blue-400 bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 transition-colors">
+          ↓ Carregar do Repo
+        </button>
+      </div>
+
+      <div class="bg-zinc-800/50 rounded-xl p-3 text-[11px] text-zinc-500 leading-relaxed">
+        <strong class="text-zinc-400">Como usar:</strong> crie um PAT em
+        <span class="text-blue-400">github.com → Settings → Developer → Personal access tokens</span>
+        com permissão <code class="bg-zinc-700 px-1 rounded">repo</code>. O arquivo
+        <code class="bg-zinc-700 px-1 rounded">data.json</code> é salvo direto no repositório —
+        acessível de qualquer dispositivo e com histórico completo de commits.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ TAB: PROGRESSO ═══════════════════ -->
+<div id="tab-progresso" class="tab">
+  <h2 class="text-xl font-black mb-4">Progresso</h2>
+
+  <div class="bg-zinc-900 rounded-2xl border border-zinc-800 p-4 mb-3">
+    <label class="block text-[11px] text-zinc-400 font-bold uppercase tracking-wider mb-1.5">Exercício</label>
+    <select id="prog-ex" class="inp"></select>
+  </div>
+
+  <div id="prog-stats"></div>
+
+  <div class="bg-zinc-900 rounded-2xl border border-zinc-800 p-4 mb-3">
+    <p class="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Evolução de Carga (kg)</p>
+    <div class="relative h-52 mt-3"><canvas id="prog-chart"></canvas></div>
+  </div>
+
+  <div class="bg-zinc-900 rounded-2xl border border-zinc-800 p-4 mb-6">
+    <p class="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-3">Histórico — últimas 10 sessões</p>
+    <div id="prog-history"></div>
+  </div>
+</div>
+
+</main>
+</div><!-- /max-w-md -->
+
+<!-- ───── BOTTOM NAV ───── -->
+<nav class="fixed bottom-0 inset-x-0 bg-zinc-950/95 backdrop-blur-sm border-t border-zinc-800 z-50">
+  <div class="max-w-md mx-auto flex">
+    <button class="nav-btn flex-1 flex flex-col items-center gap-1 py-2.5 text-zinc-500 transition-colors" data-tab="treino">
+      <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29l-1.43-1.43z"/></svg>
+      <span class="text-[10px] font-bold uppercase tracking-wider">Treino</span>
+    </button>
+    <button class="nav-btn flex-1 flex flex-col items-center gap-1 py-2.5 text-zinc-500 transition-colors" data-tab="dieta">
+      <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/></svg>
+      <span class="text-[10px] font-bold uppercase tracking-wider">Dieta</span>
+    </button>
+    <button class="nav-btn flex-1 flex flex-col items-center gap-1 py-2.5 text-zinc-500 transition-colors" data-tab="log">
+      <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+      <span class="text-[10px] font-bold uppercase tracking-wider">Registrar</span>
+    </button>
+    <button class="nav-btn flex-1 flex flex-col items-center gap-1 py-2.5 text-zinc-500 transition-colors" data-tab="progresso">
+      <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+      <span class="text-[10px] font-bold uppercase tracking-wider">Progresso</span>
+    </button>
+  </div>
+</nav>
+
+<!-- ───── TOAST ───── -->
+<div id="toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 text-black text-[13px] font-black px-5 py-2.5 rounded-full z-[999] opacity-0 pointer-events-none transition-opacity duration-300 whitespace-nowrap" style="background:#b3ff00"></div>
+
+<script>
+'use strict';
+
+// ━━━━━━━━━━━━━━━━━ PLAN DATA ━━━━━━━━━━━━━━━━━
+const PLAN = {
+  Pull: {
+    color:'#60a5fa', bg:'rgba(96,165,250,.15)', muscles:'Costas · Bíceps · Ombro Posterior',
+    exercises:[
+      {name:'Pulldown Polia',rest:'2-3min',sets:[{t:'W',r:'12-15'},{t:'F',r:'6-8'},{t:'F',r:'6-8'},{t:'S',r:'6-10',n:'pico 2s'},{t:'S',r:'6-10',n:'pico 2s'}]},
+      {name:'Puxada Alta Frontal',rest:'2-3min',sets:[{t:'F',r:'6-8'},{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+      {name:'Remada Baixa Triângulo',rest:'2-3min',sets:[{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+      {name:'Crucifixo Inverso',rest:'1:30-2min',sets:[{t:'F',r:'6-8'},{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+      {name:'Rosca Scott Máquina',rest:'1:30-2min',sets:[{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+    ]
+  },
+  Push:{
+    color:'#f87171', bg:'rgba(248,113,113,.15)', muscles:'Peito · Tríceps · Ombro',
+    exercises:[
+      {name:'Supino Reto Máquina',rest:'2-3min',sets:[{t:'W',r:'12-15'},{t:'F',r:'6-8'},{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+      {name:'Supino Inclinado Máquina',rest:'2-3min',sets:[{t:'F',r:'6-8'},{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+      {name:'Crucifixo Máquina',rest:'1:30-2min',sets:[{t:'F',r:'6-8'},{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+      {name:'Triceps Pulley',rest:'1:30-2min',sets:[{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+      {name:'Triceps Francês Corda',rest:'1:30-2min',sets:[{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+      {name:'Elevação Frontal Polia',rest:'1:30-2min',sets:[{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+      {name:'Elevação Lateral Máquina',rest:'1:30-2min',sets:[{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+    ]
+  },
+  Legs:{
+    color:'#fbbf24', bg:'rgba(251,191,36,.15)', muscles:'Posterior · Glúteo · Isquiotibiais',
+    exercises:[
+      {name:'Terra Sumô',rest:'2-3min',sets:[{t:'W',r:'12-15'},{t:'F',r:'6-8'},{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+      {name:'Elevação Pélvica',rest:'2-3min',sets:[{t:'F',r:'6-8'},{t:'F',r:'6-8'},{t:'S',r:'6-10',n:'pico 2s'},{t:'S',r:'6-10',n:'pico 2s'}]},
+      {name:'Agachamento Búlgaro',rest:'2-3min',sets:[{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+      {name:'Cadeira Flexora',rest:'1:30-2min',sets:[{t:'F',r:'6-8'},{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+      {name:'Mesa Flexora',rest:'2-3min',sets:[{t:'F',r:'6-8'},{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+    ]
+  },
+  Upper:{
+    color:'#c4b5fd', bg:'rgba(196,181,253,.15)', muscles:'Superior Completo',
+    exercises:[
+      {name:'Remada Máquina Pronada',rest:'2-3min',sets:[{t:'W',r:'12-15'},{t:'F',r:'6-8'},{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+      {name:'Puxada Alta Triângulo',rest:'1:30-2min',sets:[{t:'F',r:'6-8'},{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+      {name:'Rosca Martelo Halter',rest:'1:30-2min',sets:[{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+      {name:'Supino Inclinado Máquina',rest:'2-3min',sets:[{t:'W',r:'12-15'},{t:'F',r:'6-8'},{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+      {name:'Crossover',rest:'1:30-2min',sets:[{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+      {name:'Desenvolvimento Militar Smith',rest:'1:30-2min',sets:[{t:'F',r:'6-8'},{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+      {name:'Elevação Lateral Halter',rest:'1:30-2min',sets:[{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+      {name:'Elevação Lateral Polia',rest:'1:30-2min',sets:[{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+      {name:'Triceps Testa Polia',rest:'1:30-2min',sets:[{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+    ]
+  },
+  Lower:{
+    color:'#6ee7b7', bg:'rgba(110,231,183,.15)', muscles:'Quadríceps · Isquiotibiais',
+    exercises:[
+      {name:'Agachamento Livre',rest:'2-3min',sets:[{t:'W',r:'12-15'},{t:'F',r:'6-8'},{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+      {name:'Hack Machine',rest:'2-3min',sets:[{t:'F',r:'6-8'},{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+      {name:'Leg 45',rest:'2-3min',sets:[{t:'F',r:'6-8'},{t:'F',r:'6-8'},{t:'F',r:'6-8'},{t:'C',r:'5+5+5+5',n:'10s entre blocos'}]},
+      {name:'Cadeira Extensora',rest:'1:30-2min',sets:[{t:'F',r:'6-8'},{t:'S',r:'6-10',n:'+10 parciais'},{t:'S',r:'6-10',n:'+10 parciais'}]},
+      {name:'Stiff',rest:'2-3min',sets:[{t:'F',r:'6-8'},{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+      {name:'Cadeira Flexora',rest:'1:30-2min',sets:[{t:'F',r:'6-8'},{t:'F',r:'6-8'},{t:'S',r:'6-10'},{t:'S',r:'6-10'}]},
+    ]
+  }
+};
+
+const TS = {
+  W:{lbl:'Warm-up',bg:'rgba(251,146,60,.18)',color:'#fb923c',border:'rgba(251,146,60,.3)'},
+  F:{lbl:'Feeder', bg:'rgba(96,165,250,.18)', color:'#60a5fa',border:'rgba(96,165,250,.3)'},
+  S:{lbl:'Work',   bg:'rgba(179,255,0,.15)',  color:'#b3ff00',border:'rgba(179,255,0,.35)'},
+  C:{lbl:'Cluster',bg:'rgba(248,113,113,.18)',color:'#f87171',border:'rgba(248,113,113,.3)'},
+};
+
+const ALL_EX = [...new Set(Object.values(PLAN).flatMap(d=>d.exercises.map(e=>e.name)))].sort();
+
+// ━━━━━━━━━━━━━━━━━ DIET DATA ━━━━━━━━━━━━━━━━━
+const MEALS = [
+  {name:'1ª Refeição — Café da manhã',items:['Pão de sal – 1 uni (50g)','Queijo muçarela – 1 fatia (20g)','Frango desfiado – 50g','Requeijão – 1 col (20g)','Mamão – 150g','Melancia – 150g','Aveia – 20g']},
+  {name:'2ª Refeição — Almoço',items:['Arroz – 130g','Feijão – 80g','Frango 150g / Lombo 170g / Carne 160g / Tilápia 200g','Salada de folhas e legumes à vontade','Azeite – 1 colher']},
+  {name:'3ª Refeição — Pré-treino',items:['Pão de forma – 1 fatia','Doce de leite – 1 col (20g)','Iogurte natural integral – 1 uni','Banana – 1 uni (80g)','Morango – 100g','Aveia – 10g']},
+  {name:'4ª Refeição — Pós-treino',items:['Batata inglesa – 150g','Frango 150g / Lombo 170g / Carne 160g / Tilápia 200g','Salada de folhas e legumes à vontade','Azeite – 1 colher']},
+];
+
+// ━━━━━━━━━━━━━━━━━ STORAGE ━━━━━━━━━━━━━━━━━
+const KEY = 'gymTracker_v2';
+const REPO_KEY = 'gymTrackerRepo';
+const DATA_FILE = 'data.json';
+const A = '#b3ff00'; // accent
+
+function loadData(){ try{ return JSON.parse(localStorage.getItem(KEY))||{sessions:[],currentWeek:1}; }catch{ return {sessions:[],currentWeek:1}; } }
+function saveData(d){ localStorage.setItem(KEY,JSON.stringify(d)); }
+function detectOwnerRepo(){ const h=window.location.hostname,p=window.location.pathname; if(h.endsWith('.github.io')){ return {owner:h.replace('.github.io',''),repo:p.split('/').filter(Boolean)[0]||'gym-training'}; } return {owner:'',repo:'gym-training'}; }
+function loadRepoSettings(){ try{ const d=detectOwnerRepo(); const s=JSON.parse(localStorage.getItem(REPO_KEY))||{}; return Object.assign({token:''},d,s); }catch{ return {token:'',owner:'',repo:'gym-training'}; } }
+function saveRepoSettings(s){ localStorage.setItem(REPO_KEY,JSON.stringify(s)); }
+
+let app = loadData();
+
+// ━━━━━━━━━━━━━━━━━ UTILS ━━━━━━━━━━━━━━━━━
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function today(){ return new Date().toISOString().split('T')[0]; }
+function fmt(d){ if(!d)return''; const[y,m,day]=d.split('-'); return`${day}/${m}/${y}`; }
+
+function toast(msg, err=false){
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.style.background=err?'#f87171':A;
+  el.style.color=err?'#fff':'#111';
+  el.style.opacity='1';
+  setTimeout(()=>{ el.style.opacity='0'; },2800);
+}
+
+// ━━━━━━━━━━━━━━━━━ NAV ━━━━━━━━━━━━━━━━━
+document.querySelectorAll('.nav-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const tab=btn.dataset.tab;
+    document.querySelectorAll('.nav-btn').forEach(b=>{ b.style.color=''; });
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    btn.style.color=A;
+    document.getElementById('tab-'+tab).classList.add('active');
+    if(tab==='progresso') renderProgress();
+  });
+});
+document.querySelector('[data-tab="treino"]').style.color=A;
+
+// ━━━━━━━━━━━━━━━━━ WEEK GRID ━━━━━━━━━━━━━━━━━
+function renderWeekGrid(){
+  const grid=document.getElementById('week-grid');
+  const lbl=document.getElementById('week-label');
+  grid.innerHTML='';
+  for(let w=1;w<=5;w++){
+    const on=app.currentWeek===w, dl=w===5;
+    const box=document.createElement('button');
+    box.className='rounded-xl py-2 text-center text-[11px] font-black transition-all';
+    box.style.cssText=on
+      ?(dl?`border:2px solid #60a5fa;background:rgba(96,165,250,.12);color:#60a5fa`:`border:2px solid ${A};background:rgba(179,255,0,.1);color:${A}`)
+      :'border:2px solid #3f3f46;background:#27272a;color:#71717a';
+    box.innerHTML=dl?`Deload<br><span style="font-size:9px;opacity:.7">S5</span>`:`S${w}<br><span style="font-size:9px;opacity:.7">Choque</span>`;
+    box.addEventListener('click',()=>{ app.currentWeek=w; saveData(app); renderWeekGrid(); document.getElementById('log-week').value=w; });
+    grid.appendChild(box);
+  }
+  lbl.style.color=app.currentWeek===5?'#60a5fa':'#71717a';
+  lbl.textContent=app.currentWeek===5
+    ?'Semana de Deload — treino leve (30% RM). Recuperação ativa, priorize o sono.'
+    :`Semana ${app.currentWeek} de 4 — choque (>70% RM). Supere as cargas anteriores!`;
+}
+
+// ━━━━━━━━━━━━━━━━━ CHIPS ━━━━━━━━━━━━━━━━━
+function buildChips(id, active, cb){
+  const c=document.getElementById(id); c.innerHTML='';
+  Object.keys(PLAN).forEach(day=>{
+    const on=day===active, p=PLAN[day];
+    const b=document.createElement('button');
+    b.className='flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-black border transition-all';
+    b.style.cssText=on?`background:${p.color};border-color:${p.color};color:#111`:'background:#27272a;border-color:#3f3f46;color:#71717a';
+    b.textContent=day;
+    b.addEventListener('click',()=>cb(day));
+    c.appendChild(b);
+  });
+}
+
+// ━━━━━━━━━━━━━━━━━ TREINO TAB ━━━━━━━━━━━━━━━━━
+let trDay='Pull';
+
+function renderTreinoEx(){
+  const p=PLAN[trDay], c=document.getElementById('treino-exercises');
+  c.innerHTML='';
+  // tip
+  const tip=document.createElement('div');
+  tip.style.cssText='background:rgba(179,255,0,.07);border:1px solid rgba(179,255,0,.18);border-radius:14px;padding:12px;margin-bottom:12px;font-size:13px;line-height:1.65';
+  tip.innerHTML=`<strong style="color:${A}">${esc(trDay)} — ${esc(p.muscles)}</strong><br>Work sets: <strong style="color:${A}">falha entre 6–10 reps</strong> · Compostos: 2–3min descanso<br><strong style="color:${A}">Progressão:</strong> bateu 10 reps → sobe 2,5–5 kg na próxima sessão`;
+  c.appendChild(tip);
+
+  p.exercises.forEach(ex=>{
+    const div=document.createElement('div');
+    div.className='rounded-2xl mb-2 overflow-hidden';
+    div.style.cssText='background:#18181b;border:1px solid #27272a';
+
+    const tags=ex.sets.map((s,i)=>{
+      const ts=TS[s.t], note=s.n?` <em style="font-size:9px;opacity:.55">· ${esc(s.n)}</em>`:'';
+      return `<span style="display:inline-block;padding:2px 7px;border-radius:6px;font-size:9px;font-weight:800;margin:2px;background:${ts.bg};color:${ts.color};border:1px solid ${ts.border}">${esc(ts.lbl)} ${esc(s.r)}</span>${note}`;
+    }).join('');
+
+    const wN=ex.sets.filter(s=>s.t==='W').length, fN=ex.sets.filter(s=>s.t==='F').length, sN=ex.sets.filter(s=>s.t==='S').length;
+    let proto='';
+    if(wN) proto+=`<span style="color:#a1a1aa">1× aquecimento</span> → `;
+    if(fN) proto+=`<span style="color:#60a5fa">${fN}× feeder</span> (acha carga p/ falha em 8) → `;
+    proto+=`<span style="color:${A}">${sN}× work set</span> até falha total`;
+
+    div.innerHTML=`
+      <div class="ex-head flex items-center gap-3 px-4 py-3 cursor-pointer select-none" style="border-left:3px solid ${esc(p.color)}">
+        <div class="flex-1">
+          <div style="font-size:14px;font-weight:700">${esc(ex.name)}</div>
+          <div style="font-size:11px;color:#71717a;margin-top:1px">⏱ ${esc(ex.rest)} · ${ex.sets.length} séries</div>
+        </div>
+        <svg class="ex-arrow w-4 h-4 fill-zinc-500 transition-transform flex-shrink-0" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+      </div>
+      <div class="ex-body px-4 pb-3">
+        <div style="margin-bottom:8px">${tags}</div>
+        <div style="font-size:12px;color:#71717a;line-height:1.6">${proto}</div>
+      </div>`;
+
+    div.querySelector('.ex-head').addEventListener('click',()=>{
+      const b=div.querySelector('.ex-body'), ar=div.querySelector('.ex-arrow');
+      b.classList.toggle('open');
+      ar.style.transform=b.classList.contains('open')?'rotate(180deg)':'';
+    });
+    c.appendChild(div);
+  });
+}
+
+function onTrDay(day){ trDay=day; buildChips('treino-day-chips',trDay,onTrDay); renderTreinoEx(); }
+
+// ━━━━━━━━━━━━━━━━━ DIET TAB ━━━━━━━━━━━━━━━━━
+function renderDiet(){
+  const c=document.getElementById('meal-list');
+  MEALS.forEach(m=>{
+    const d=document.createElement('div');
+    d.style.cssText='background:#18181b;border:1px solid #27272a;border-radius:16px;padding:14px;margin-bottom:10px';
+    d.innerHTML=`<div style="font-size:13px;font-weight:800;color:${A};margin-bottom:10px">${esc(m.name)}</div>`
+      +m.items.map(i=>`<div style="font-size:13px;padding:6px 0;border-bottom:1px solid #27272a;color:#d4d4d8">${esc(i)}</div>`).join('');
+    c.appendChild(d);
+  });
+  c.insertAdjacentHTML('beforeend',`
+    <div style="background:rgba(96,165,250,.07);border:1px solid rgba(96,165,250,.2);border-radius:14px;padding:12px;margin-bottom:10px;font-size:13px;line-height:1.7">
+      <strong style="color:#60a5fa">Obrigatório todos os dias:</strong><br>
+      🚰 Mínimo 4 litros de água<br>🏃 30 min de cárdio a 120 bpm
+    </div>
+    <div style="background:rgba(179,255,0,.07);border:1px solid rgba(179,255,0,.18);border-radius:14px;padding:12px;font-size:13px;line-height:1.65;margin-bottom:20px">
+      <strong style="color:${A}">Dica de cutting:</strong> A proteína alta (145g) preserva músculo no déficit calórico.
+      Não pule o pós-treino. Água e cárdio são inegociáveis para queima de gordura.
+    </div>`);
+}
+
+// ━━━━━━━━━━━━━━━━━ LOG TAB ━━━━━━━━━━━━━━━━━
+let logDay='Pull';
+
+function lastWorkSet(name){
+  const s=[...app.sessions].filter(s=>s.exercises&&s.exercises.some(e=>e.name===name)).sort((a,b)=>b.date.localeCompare(a.date));
+  if(!s.length)return null;
+  const ex=s[0].exercises.find(e=>e.name===name);
+  if(!ex)return null;
+  const ws=ex.sets.filter(s=>s.t==='S'&&s.kg>0);
+  if(!ws.length)return null;
+  return ws.reduce((b,s)=>s.kg>b.kg||(s.kg===b.kg&&s.reps>b.reps)?s:b);
+}
+
+function renderLogEx(){
+  const p=PLAN[logDay], c=document.getElementById('log-exercises'); c.innerHTML='';
+  p.exercises.forEach((ex,ei)=>{
+    const last=lastWorkSet(ex.name);
+    const d=document.createElement('div');
+    d.style.cssText='background:#18181b;border:1px solid #27272a;border-radius:16px;padding:14px;margin-bottom:10px';
+    const li=last
+      ?`<span style="font-size:11px;color:#71717a">Último: <strong style="color:${A}">${esc(String(last.kg))} kg × ${esc(String(last.reps))} reps</strong></span>`
+      :`<span style="font-size:11px;color:#71717a">Primeiro registro</span>`;
+    const rows=ex.sets.map((s,si)=>{
+      const ts=TS[s.t], hk=last?last.kg:'', hr=s.r.includes('-')?s.r.split('-')[1]:s.r;
+      return `<div style="display:grid;grid-template-columns:18px 52px 1fr 18px 1fr 20px;align-items:center;gap:5px;padding:5px 0;border-bottom:1px solid #27272a">
+        <span style="font-size:10px;color:#71717a;font-weight:700">${si+1}</span>
+        <span style="padding:2px 5px;border-radius:5px;font-size:9px;font-weight:800;text-align:center;background:${ts.bg};color:${ts.color};border:1px solid ${ts.border}">${esc(ts.lbl)}</span>
+        <input type="number" inputmode="decimal" min="0" step="0.5" placeholder="${esc(String(hk))}" data-ei="${ei}" data-si="${si}" data-f="kg" class="inp-sm log-input" />
+        <span style="font-size:10px;color:#71717a;text-align:center">kg</span>
+        <input type="number" inputmode="numeric" min="0" max="50" step="1" placeholder="${esc(hr)}" data-ei="${ei}" data-si="${si}" data-f="reps" class="inp-sm log-input" />
+        <span style="font-size:10px;color:#71717a">rep</span>
+      </div>`;
+    }).join('');
+    d.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;padding-left:10px;border-left:3px solid ${esc(p.color)}">
+      <div><div style="font-size:14px;font-weight:700;margin-bottom:3px">${esc(ex.name)}</div>${li}</div>
+      <div style="font-size:11px;color:#71717a;flex-shrink:0;margin-left:8px">⏱ ${esc(ex.rest)}</div>
+    </div>${rows}`;
+    c.appendChild(d);
+  });
+}
+
+function onLogDay(day){ logDay=day; buildChips('log-day-chips',logDay,onLogDay); renderLogEx(); }
+
+function initLog(){
+  document.getElementById('log-date').value=today();
+  document.getElementById('log-week').value=app.currentWeek;
+  buildChips('log-day-chips',logDay,onLogDay);
+  renderLogEx();
+  const rs=loadRepoSettings();
+  if(rs.token) document.getElementById('repo-token').value=rs.token;
+  if(rs.owner) document.getElementById('repo-owner').value=rs.owner;
+  if(rs.repo) document.getElementById('repo-repo').value=rs.repo;
+}
+
+document.getElementById('btn-save').addEventListener('click',()=>{
+  const date=document.getElementById('log-date').value;
+  const week=parseInt(document.getElementById('log-week').value,10);
+  if(!date){ toast('Selecione a data!',true); return; }
+  const p=PLAN[logDay], exercises=[];
+  p.exercises.forEach((ex,ei)=>{
+    const sets=ex.sets.map((s,si)=>{
+      const kg=parseFloat(document.querySelector(`[data-ei="${ei}"][data-si="${si}"][data-f="kg"]`)?.value)||0;
+      const reps=parseInt(document.querySelector(`[data-ei="${ei}"][data-si="${si}"][data-f="reps"]`)?.value,10)||0;
+      return {t:s.t,kg,reps};
+    }).filter(s=>s.kg>0||s.reps>0);
+    if(sets.length) exercises.push({name:ex.name,sets});
+  });
+  if(!exercises.length){ toast('Nenhuma série preenchida!',true); return; }
+  app.sessions.push({id:Date.now().toString(),date,dayType:logDay,week,exercises});
+  app.currentWeek=week;
+  saveData(app);
+  renderWeekGrid();
+  document.querySelectorAll('.log-input').forEach(i=>{ i.value=''; });
+  toast(`✅ ${logDay} salvo! ${exercises.length} exercícios`);
+});
+
+// Export / Import
+document.getElementById('btn-export').addEventListener('click',()=>{
+  const b=new Blob([JSON.stringify(app,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=`gym-${today()}.json`; a.click();
+  URL.revokeObjectURL(a.href); toast('JSON exportado!');
+});
+
+document.getElementById('import-file').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{ try{
+    const d=JSON.parse(ev.target.result);
+    if(!Array.isArray(d.sessions))throw new Error('invalid');
+    app=d; saveData(app); renderWeekGrid();
+    document.getElementById('log-week').value=app.currentWeek;
+    toast(`✅ ${app.sessions.length} sessões importadas!`);
+  }catch{ toast('❌ Arquivo inválido',true); }};
+  r.readAsText(f); e.target.value='';
+});
+
+// GitHub Repo Sync
+async function repoPush(){
+  const token=document.getElementById('repo-token').value.trim();
+  const owner=document.getElementById('repo-owner').value.trim();
+  const repo=document.getElementById('repo-repo').value.trim();
+  if(!token||!owner||!repo){ toast('Preencha token, usuário e repositório!',true); return; }
+  saveRepoSettings({token,owner,repo});
+  const bytes=new TextEncoder().encode(JSON.stringify(app,null,2));
+  const content=btoa(Array.from(bytes,b=>String.fromCharCode(b)).join(''));
+  const apiUrl=`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${DATA_FILE}`;
+  let sha='';
+  try{
+    const r=await fetch(apiUrl,{headers:{'Authorization':`Bearer ${token}`,'Accept':'application/vnd.github+json'}});
+    if(r.ok){ const f=await r.json(); sha=f.sha; }
+  }catch{}
+  const body={message:`gym-tracker: update ${new Date().toISOString().split('T')[0]}`,content};
+  if(sha) body.sha=sha;
+  try{
+    const res=await fetch(apiUrl,{
+      method:'PUT',
+      headers:{'Authorization':`Bearer ${token}`,'Accept':'application/vnd.github+json','Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    });
+    if(!res.ok){const e=await res.json();throw new Error(e.message||`HTTP ${res.status}`);}
+    toast('✅ data.json salvo no repositório!');
+  }catch(e){ toast(`❌ ${e.message}`,true); }
+}
+
+async function repoPull(){
+  const token=document.getElementById('repo-token').value.trim();
+  const owner=document.getElementById('repo-owner').value.trim();
+  const repo=document.getElementById('repo-repo').value.trim();
+  if(!token||!owner||!repo){ toast('Preencha token, usuário e repositório!',true); return; }
+  saveRepoSettings({token,owner,repo});
+  try{
+    const res=await fetch(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${DATA_FILE}`,{
+      headers:{'Authorization':`Bearer ${token}`,'Accept':'application/vnd.github+json'}
+    });
+    if(!res.ok){const e=await res.json();throw new Error(e.message||`HTTP ${res.status}`);}
+    const g=await res.json();
+    const bytes=Uint8Array.from(atob(g.content.replace(/\n/g,'')),c=>c.charCodeAt(0));
+    const d=JSON.parse(new TextDecoder().decode(bytes));
+    if(!Array.isArray(d.sessions))throw new Error('Formato inválido');
+    app=d; saveData(app); renderWeekGrid();
+    document.getElementById('log-week').value=app.currentWeek;
+    renderLogEx();
+    toast(`✅ ${app.sessions.length} sessões carregadas!`);
+  }catch(e){ toast(`❌ ${e.message}`,true); }
+}
+
+document.getElementById('btn-repo-push').addEventListener('click',repoPush);
+document.getElementById('btn-repo-pull').addEventListener('click',repoPull);
+
+// ━━━━━━━━━━━━━━━━━ PROGRESS TAB ━━━━━━━━━━━━━━━━━
+let pChart=null;
+
+function fillExSelect(){
+  const s=document.getElementById('prog-ex');
+  s.innerHTML=ALL_EX.map(e=>`<option value="${esc(e)}">${esc(e)}</option>`).join('');
+  s.addEventListener('change',renderProgress);
+}
+
+function getHistory(name){
+  const rows=[];
+  app.sessions.forEach(s=>{
+    const ex=s.exercises&&s.exercises.find(e=>e.name===name);
+    if(!ex)return;
+    const ws=ex.sets.filter(s=>s.t==='S'&&s.kg>0);
+    if(!ws.length)return;
+    const maxKg=Math.max(...ws.map(s=>s.kg));
+    const maxReps=ws.filter(s=>s.kg===maxKg).reduce((a,s)=>Math.max(a,s.reps||0),0);
+    rows.push({date:s.date,dayType:s.dayType,week:s.week,maxKg,maxReps,ws});
+  });
+  return rows.sort((a,b)=>a.date.localeCompare(b.date));
+}
+
+function renderProgress(){
+  const name=document.getElementById('prog-ex').value;
+  const hist=getHistory(name);
+  const se=document.getElementById('prog-stats'), he=document.getElementById('prog-history');
+
+  if(!hist.length){
+    se.innerHTML=`<div style="background:#18181b;border:1px solid #27272a;border-radius:16px;padding:20px;text-align:center;color:#71717a;margin-bottom:12px;font-size:13px">Nenhum registro ainda.<br>Comece a registrar seus treinos!</div>`;
+  } else {
+    const last=hist[hist.length-1], prev=hist.length>1?hist[hist.length-2]:null;
+    let badge='';
+    if(prev){
+      if(last.maxKg>prev.maxKg) badge=`<span style="background:rgba(179,255,0,.15);color:${A};padding:2px 8px;border-radius:8px;font-size:11px;font-weight:800">↑ +${(last.maxKg-prev.maxKg).toFixed(1)} kg</span>`;
+      else if(last.maxKg===prev.maxKg&&last.maxReps>prev.maxReps) badge=`<span style="background:rgba(179,255,0,.15);color:${A};padding:2px 8px;border-radius:8px;font-size:11px;font-weight:800">↑ +${last.maxReps-prev.maxReps} rep</span>`;
+      else if(last.maxKg<prev.maxKg) badge=`<span style="background:rgba(248,113,113,.15);color:#f87171;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:800">↓ -${(prev.maxKg-last.maxKg).toFixed(1)} kg</span>`;
+      else badge=`<span style="background:rgba(251,191,36,.15);color:#fbbf24;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:800">→ Estável</span>`;
+    }
+    let alert='';
+    if(last.maxReps>=10) alert=`<div style="background:rgba(179,255,0,.07);border:1px solid rgba(179,255,0,.2);border-radius:10px;padding:11px;margin-top:10px;font-size:13px;line-height:1.6"><strong style="color:${A}">🔥 HORA DE PROGREDIR!</strong><br>Bateu ${last.maxReps} reps com ${esc(String(last.maxKg))} kg — sobe 2,5–5 kg na próxima!</div>`;
+    else if(last.maxReps>=8) alert=`<div style="background:#27272a;border:1px solid #3f3f46;border-radius:10px;padding:11px;margin-top:10px;font-size:13px">✅ <strong>${esc(String(last.maxKg))} kg × ${last.maxReps} reps</strong> — Bom! Tente mais ${10-last.maxReps} rep(s) antes de subir.</div>`;
+    else if(last.maxReps<=5) alert=`<div style="background:rgba(96,165,250,.07);border:1px solid rgba(96,165,250,.2);border-radius:10px;padding:11px;margin-top:10px;font-size:13px">⚠️ Só ${last.maxReps} reps — pode estar pesado demais ou fadiga. Monitore.</div>`;
+    se.innerHTML=`<div style="background:#18181b;border:1px solid #27272a;border-radius:16px;padding:14px;margin-bottom:10px">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">
+        <div><div style="font-size:28px;font-weight:900;color:${A}">${esc(String(last.maxKg))}</div><div style="font-size:10px;color:#71717a;margin-top:2px">kg máx</div></div>
+        <div><div style="font-size:28px;font-weight:900;color:#60a5fa">${last.maxReps}</div><div style="font-size:10px;color:#71717a;margin-top:2px">reps</div></div>
+        <div><div style="font-size:28px;font-weight:900">${hist.length}</div><div style="font-size:10px;color:#71717a;margin-top:2px">sessões</div><div style="margin-top:4px">${badge}</div></div>
+      </div>${alert}</div>`;
+  }
+
+  // Chart
+  const ctx=document.getElementById('prog-chart').getContext('2d');
+  if(pChart){ pChart.destroy(); pChart=null; }
+  pChart=new Chart(ctx,{type:'line',data:{labels:hist.map(h=>fmt(h.date)),datasets:[{label:'kg',data:hist.map(h=>h.maxKg),borderColor:A,backgroundColor:'rgba(179,255,0,.07)',borderWidth:2.5,pointRadius:5,pointBackgroundColor:A,pointBorderColor:'#111',pointBorderWidth:2,tension:.3,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#27272a',titleColor:'#a1a1aa',bodyColor:A,borderColor:'#3f3f46',borderWidth:1,callbacks:{label:c=>`${c.parsed.y} kg`}}},scales:{x:{ticks:{color:'#71717a',font:{size:10},maxRotation:40},grid:{color:'#27272a'}},y:{ticks:{color:'#71717a',font:{size:11}},grid:{color:'#27272a'},suggestedMin:0}}}});
+
+  // History
+  he.innerHTML='';
+  if(!hist.length){ he.innerHTML='<div style="font-size:13px;color:#71717a;text-align:center;padding:12px">Nenhum registro</div>'; return; }
+  [...hist].reverse().slice(0,10).forEach((h,i)=>{
+    const p2=i<hist.length-1?[...hist].reverse()[i+1]:null;
+    let tr='→',tc='#fbbf24';
+    if(p2){ if(h.maxKg>p2.maxKg){tr='↑';tc=A;}else if(h.maxKg<p2.maxKg){tr='↓';tc='#f87171';} }
+    he.insertAdjacentHTML('beforeend',`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #27272a">
+      <div><div style="font-weight:700;font-size:13px">${fmt(h.date)} <span style="color:#71717a;font-size:11px;font-weight:400">${esc(h.dayType)} S${h.week||'?'}</span></div>
+      <div style="font-size:11px;color:#71717a;margin-top:1px">${esc(h.ws.map(s=>`${s.kg}×${s.reps}`).join(' · '))}</div></div>
+      <div style="text-align:right;flex-shrink:0;margin-left:12px">
+        <div style="font-size:20px;font-weight:900;color:${A}">${esc(String(h.maxKg))} kg</div>
+        <div style="font-size:12px;font-weight:800;color:${tc}">${tr} ${h.maxReps} reps</div>
+      </div></div>`);
+  });
+  const last2=he.querySelectorAll('div[style*="border-bottom"]');
+  if(last2.length) last2[last2.length-1].style.borderBottom='none';
+}
+
+// ━━━━━━━━━━━━━━━━━ INIT ━━━━━━━━━━━━━━━━━
+renderWeekGrid();
+buildChips('treino-day-chips',trDay,onTrDay);
+renderTreinoEx();
+renderDiet();
+initLog();
+fillExSelect();
+</script>
+</body>
+</html>
