@@ -642,7 +642,8 @@ function renderLogEx(){
       if(filled.length){
         const badges=filled.map(s=>{
           const ts=TS[s.t]||TS.S;
-          return `<span style="display:inline-flex;align-items:center;gap:2px;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:800;background:${ts.bg};color:${ts.color};border:1px solid ${ts.border};white-space:nowrap">${esc(ts.lbl.charAt(0))} ${esc(String(s.kg))}&times;${esc(String(s.reps))}</span>`;
+          const abbr={W:'Wup',F:'Feed',S:'Work',C:'Clst'}[s.t]||s.t;
+          return `<span style="display:inline-flex;align-items:center;gap:2px;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:800;background:${ts.bg};color:${ts.color};border:1px solid ${ts.border};white-space:nowrap">${esc(abbr)} ${esc(String(s.kg))}&times;${esc(String(s.reps))}</span>`;
         }).join('');
         prevHtml=`<div style="margin-top:6px;padding-top:6px;border-top:1px solid #27272a"><span style="font-size:10px;color:#52525b;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Ant&nbsp;</span><span style="display:inline-flex;flex-wrap:wrap;gap:3px">${badges}</span></div>`;
       }
@@ -652,7 +653,7 @@ function renderLogEx(){
 
     const rows=ex.sets.map((s,si)=>{
       const ts=TS[s.t]||TS.S;
-      const pSet=prev&&prev[si]&&(prev[si].kg>0||prev[si].reps>0)?prev[si]:null;
+      const pSet=prev&&prev.filter(ps=>ps.t===s.t&&(ps.kg>0||ps.reps>0)).pop()||null;
       const hk=pSet?pSet.kg:(lastWorkSet(ex.name)?.kg||'');
       const hr=s.r.includes('-')?s.r.split('-')[1]:s.r;
       const restSec={W:60,F:90,S:180,C:180}[s.t]||180;
