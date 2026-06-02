@@ -46,6 +46,17 @@
   </style>
 </head>
 <body class="bg-zinc-950 text-zinc-100 min-h-screen pb-20 antialiased">
+
+<!-- ═══════════════════ MODAL: GITHUB TOKEN ═══════════════════ -->
+<div id="modal-token" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.92);align-items:center;justify-content:center;padding:24px">
+  <div style="background:#18181b;border:1px solid #3f3f46;border-radius:20px;padding:28px;width:100%;max-width:380px">
+    <h2 style="font-size:18px;font-weight:900;color:#b3ff00;margin-bottom:6px">⚡ GitHub Token</h2>
+    <p style="font-size:13px;color:#a1a1aa;margin-bottom:20px;line-height:1.5">Cole seu <strong style="color:#e4e4e7">Personal Access Token</strong> (escopo <code style="color:#60a5fa">repo</code>) para sincronizar com o <code style="color:#60a5fa">data.json</code>. Salvo só neste browser, nunca no código.</p>
+    <input id="input-pat" type="password" class="inp-pw" placeholder="github_pat_..." style="margin-bottom:14px" autocomplete="off" />
+    <button id="btn-save-pat" style="width:100%;background:#b3ff00;color:#000;font-weight:900;font-size:14px;border-radius:12px;padding:14px;border:none;cursor:pointer">Salvar e conectar</button>
+  </div>
+</div>
+
 <div class="max-w-md mx-auto relative">
 
 <!-- ───── HEADER ───── -->
@@ -203,6 +214,9 @@
         <input type="file" id="import-file" accept=".json" class="hidden" />
       </label>
     </div>
+    <button id="btn-reset-token" class="w-full py-2.5 rounded-xl text-xs font-bold text-zinc-500 bg-zinc-900 border border-zinc-800 hover:border-zinc-600 transition-colors mt-1">
+      🔑 Alterar token GitHub
+    </button>
 
   </div>
 </div>
@@ -441,13 +455,48 @@ const MEALS = [
 ];
 
 // ━━━━━━━━━━━━━━━━━ STORAGE ━━━━━━━━━━━━━━━━━
-const KEY = 'gymTracker_v2';
+const KEY     = 'gymTracker_v2';      // backup local
+const PAT_KEY = 'gymTracker_pat';     // github token
+const OWNER   = 'rodrigo-v-r-medeiros';
+const REPO    = 'gym-training';
+const FILE    = 'data.json';
 const A = '#b3ff00'; // accent
+let currentSha = '';
 
-function loadData(){ try{ return JSON.parse(localStorage.getItem(KEY))||{sessions:[],currentWeek:1}; }catch{ return {sessions:[],currentWeek:1}; } }
-function saveData(d){ localStorage.setItem(KEY,JSON.stringify(d)); }
+function getToken(){ return localStorage.getItem(PAT_KEY)||''; }
+function loadLocal(){ try{ return JSON.parse(localStorage.getItem(KEY))||{sessions:[],currentWeek:1}; }catch{ return {sessions:[],currentWeek:1}; } }
+function saveLocal(d){ localStorage.setItem(KEY,JSON.stringify(d)); }
 
-let app = loadData();
+async function loadFromGitHub(){
+  const pat=getToken(); if(!pat) return null;
+  try{
+    const r=await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${FILE}`,
+      {headers:{Authorization:`Bearer ${pat}`,Accept:'application/vnd.github.v3+json'}});
+    if(!r.ok) return null;
+    const j=await r.json();
+    const data=JSON.parse(atob(j.content.replace(/\n/g,'')));
+    currentSha=j.sha; saveLocal(data); return data;
+  }catch{ return null; }
+}
+
+async function saveToGitHub(data){
+  const pat=getToken(); if(!pat) return false;
+  try{
+    if(!currentSha){
+      const r=await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${FILE}`,
+        {headers:{Authorization:`Bearer ${pat}`,Accept:'application/vnd.github.v3+json'}});
+      if(r.ok){ const j=await r.json(); currentSha=j.sha; }
+    }
+    const content=btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))));
+    const r=await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${FILE}`,
+      {method:'PUT',headers:{Authorization:`Bearer ${pat}`,'Content-Type':'application/json'},
+       body:JSON.stringify({message:'gym: update data',content,sha:currentSha})});
+    if(!r.ok) return false;
+    const j=await r.json(); currentSha=j.content.sha; return true;
+  }catch{ return false; }
+}
+
+let app = loadLocal();
 
 // ━━━━━━━━━━━━━━━━━ UTILS ━━━━━━━━━━━━━━━━━
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -489,7 +538,7 @@ function renderWeekGrid(){
       ?(dl?`border:2px solid #60a5fa;background:rgba(96,165,250,.12);color:#60a5fa`:`border:2px solid ${A};background:rgba(179,255,0,.1);color:${A}`)
       :'border:2px solid #3f3f46;background:#27272a;color:#71717a';
     box.innerHTML=dl?`Deload<br><span style="font-size:9px;opacity:.7">S5</span>`:`S${w}<br><span style="font-size:9px;opacity:.7">Choque</span>`;
-    box.addEventListener('click',()=>{ app.currentWeek=w; saveData(app); renderWeekGrid(); document.getElementById('log-week').value=w; });
+    box.addEventListener('click',()=>{ app.currentWeek=w; saveLocal(app); renderWeekGrid(); document.getElementById('log-week').value=w; });
     grid.appendChild(box);
   }
   lbl.style.color=app.currentWeek===5?'#60a5fa':'#71717a';
@@ -646,7 +695,7 @@ function initLog(){
   renderLogEx();
 }
 
-document.getElementById('btn-save').addEventListener('click',()=>{
+document.getElementById('btn-save').addEventListener('click', async ()=>{
   const date=document.getElementById('log-date').value;
   const week=parseInt(document.getElementById('log-week').value,10);
   if(!date){ toast('Selecione a data!',true); return; }
@@ -662,10 +711,12 @@ document.getElementById('btn-save').addEventListener('click',()=>{
   if(!exercises.length){ toast('Nenhuma série preenchida!',true); return; }
   app.sessions.push({id:Date.now().toString(),date,dayType:logDay,week,exercises});
   app.currentWeek=week;
-  saveData(app);
+  saveLocal(app);
   renderWeekGrid();
   document.querySelectorAll('.log-input').forEach(i=>{ i.value=''; });
-  toast(`✅ ${logDay} salvo! ${exercises.length} exercícios`);
+  toast(`⏳ Salvando...`);
+  const ok=await saveToGitHub(app);
+  toast(ok?`✅ ${logDay} salvo! ${exercises.length} exercícios`:`✅ Salvo localmente — sync GitHub falhou`,!ok);
 });
 
 // Export / Import
@@ -678,12 +729,14 @@ document.getElementById('btn-export').addEventListener('click',()=>{
 document.getElementById('import-file').addEventListener('change',e=>{
   const f=e.target.files[0]; if(!f)return;
   const r=new FileReader();
-  r.onload=ev=>{ try{
+  r.onload=async ev=>{ try{
     const d=JSON.parse(ev.target.result);
     if(!Array.isArray(d.sessions))throw new Error('invalid');
-    app=d; saveData(app); renderWeekGrid();
+    app=d; saveLocal(app); renderWeekGrid();
     document.getElementById('log-week').value=app.currentWeek;
-    toast(`✅ ${app.sessions.length} sessões importadas!`);
+    toast(`⏳ Importando e sincronizando...`);
+    const ok=await saveToGitHub(app);
+    toast(ok?`✅ ${app.sessions.length} sessões sincronizadas!`:`✅ ${app.sessions.length} sessões importadas (sync falhou)`,!ok);
   }catch{ toast('❌ Arquivo inválido',true); }};
   r.readAsText(f); e.target.value='';
 });
@@ -855,6 +908,25 @@ function renderProgress(){
   if(last2.length) last2[last2.length-1].style.borderBottom='none';
 }
 
+// ━━━━━━━━━━━━━━━━━ TOKEN MODAL ━━━━━━━━━━━━━━━━━
+function showTokenModal(){ const m=document.getElementById('modal-token'); m.style.display='flex'; }
+function hideTokenModal(){ document.getElementById('modal-token').style.display='none'; }
+
+document.getElementById('btn-save-pat').addEventListener('click', async ()=>{
+  const val=document.getElementById('input-pat').value.trim();
+  if(!val){ toast('Cole o token!',true); return; }
+  localStorage.setItem(PAT_KEY,val);
+  hideTokenModal();
+  toast('🔗 Conectando ao GitHub...');
+  const data=await loadFromGitHub();
+  if(data){ app=data; renderWeekGrid(); document.getElementById('log-week').value=app.currentWeek; renderLogEx(); }
+  toast(data?'✅ Sincronizado com data.json!':'⚠️ Token salvo mas sync falhou — verifique as permissões',!data);
+});
+
+document.getElementById('btn-reset-token').addEventListener('click',()=>{
+  localStorage.removeItem(PAT_KEY); showTokenModal();
+});
+
 // ━━━━━━━━━━━━━━━━━ INIT ━━━━━━━━━━━━━━━━━
 renderWeekGrid();
 buildChips('treino-day-chips',trDay,onTrDay);
@@ -862,6 +934,14 @@ renderTreinoEx();
 renderDiet();
 initLog();
 fillExSelect();
+
+(async()=>{
+  if(!getToken()){ showTokenModal(); }
+  else {
+    const data=await loadFromGitHub();
+    if(data){ app=data; renderWeekGrid(); document.getElementById('log-week').value=app.currentWeek; renderLogEx(); }
+  }
+})();
 </script>
 </body>
 </html>
