@@ -1,0 +1,118 @@
+{
+  "sessions": [
+    {
+      "id": "1780362003245",
+      "date": "2026-06-02",
+      "dayType": "Pull",
+      "week": 1,
+      "exercises": [
+        {
+          "name": "Pulldown Polia",
+          "sets": [
+            {
+              "t": "S",
+              "kg": 24.9,
+              "reps": 10
+            },
+            {
+              "t": "S",
+              "kg": 24.9,
+              "reps": 7
+            }
+          ]
+        },
+        {
+          "name": "Puxada Alta Frontal",
+          "sets": [
+            {
+              "t": "F",
+              "kg": 52,
+              "reps": 6
+            },
+            {
+              "t": "F",
+              "kg": 59,
+              "reps": 6
+            },
+            {
+              "t": "S",
+              "kg": 59,
+              "reps": 9
+            },
+            {
+              "t": "S",
+              "kg": 66,
+              "reps": 6
+            }
+          ]
+        },
+        {
+          "name": "Remada Baixa Triângulo",
+          "sets": [
+            {
+              "t": "F",
+              "kg": 59,
+              "reps": 6
+            },
+            {
+              "t": "S",
+              "kg": 66,
+              "reps": 6
+            },
+            {
+              "t": "S",
+              "kg": 66,
+              "reps": 6
+            }
+          ]
+        },
+        {
+          "name": "Crucifixo Inverso",
+          "sets": [
+            {
+              "t": "F",
+              "kg": 32,
+              "reps": 12
+            },
+            {
+              "t": "F",
+              "kg": 45,
+              "reps": 10
+            },
+            {
+              "t": "S",
+              "kg": 52,
+              "reps": 12
+            },
+            {
+              "t": "S",
+              "kg": 52,
+              "reps": 10
+            }
+          ]
+        },
+        {
+          "name": "Rosca Scott Máquina",
+          "sets": [
+            {
+              "t": "F",
+              "kg": 5,
+              "reps": 8
+            },
+            {
+              "t": "S",
+              "kg": 10,
+              "reps": 7
+            },
+            {
+              "t": "S",
+              "kg": 10,
+              "reps": 6
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "currentWeek": 1
+}
