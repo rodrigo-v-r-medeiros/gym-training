@@ -55,25 +55,6 @@
       <h1 class="text-[17px] font-black tracking-widest" style="color:#b3ff00">⚡ GYM TRACKER</h1>
       <p class="text-zinc-500 text-[11px] mt-0.5">Rodrigo · Natural · PPL + Upper/Lower · 4+1</p>
     </div>
-    <button id="btn-settings" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-zinc-800 border border-zinc-700 active:bg-zinc-700">
-      <svg class="w-4 h-4 fill-zinc-400" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94L14.4 2.81c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41L9.25 5.35c-.59.24-1.13.56-1.62.94L5.24 5.33c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.22-.08.47.12.61l2.03 1.58C4.84 11.36 4.8 11.69 4.8 12s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-      <div id="sync-dot" class="w-2 h-2 rounded-full" style="background:#52525b"></div>
-    </button>
-  </div>
-  <!-- Settings panel (configuração única) -->
-  <div id="settings-panel" class="hidden border-t border-zinc-800 pt-3 mt-2.5 pb-1">
-    <p class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">GitHub Sync — configure uma vez, funciona sempre</p>
-    <div class="space-y-2 mb-2.5">
-      <input id="repo-token" type="password" placeholder="Personal Access Token (scope: repo)" class="inp-pw" />
-      <div class="grid grid-cols-2 gap-2">
-        <input id="repo-owner" type="text" placeholder="Usuário GitHub" class="inp-pw" />
-        <input id="repo-repo" type="text" placeholder="Repositório" class="inp-pw" />
-      </div>
-    </div>
-    <div class="grid grid-cols-2 gap-2 pb-1">
-      <button id="btn-save-settings" class="py-2 rounded-xl text-xs font-black text-black" style="background:#b3ff00">✓ Salvar config</button>
-      <button id="btn-repo-pull" class="py-2 rounded-xl text-xs font-black text-blue-400 bg-blue-500/10 border border-blue-500/30">↓ Carregar dados</button>
-    </div>
   </div>
 </header>
 
@@ -222,7 +203,7 @@
         <input type="file" id="import-file" accept=".json" class="hidden" />
       </label>
     </div>
-    <p class="text-[11px] text-zinc-600">Sync GitHub automático ao salvar sessão — configure via ⚙ no topo.</p>
+
   </div>
 </div>
 
@@ -461,15 +442,10 @@ const MEALS = [
 
 // ━━━━━━━━━━━━━━━━━ STORAGE ━━━━━━━━━━━━━━━━━
 const KEY = 'gymTracker_v2';
-const REPO_KEY = 'gymTrackerRepo';
-const DATA_FILE = 'data.json';
 const A = '#b3ff00'; // accent
 
 function loadData(){ try{ return JSON.parse(localStorage.getItem(KEY))||{sessions:[],currentWeek:1}; }catch{ return {sessions:[],currentWeek:1}; } }
 function saveData(d){ localStorage.setItem(KEY,JSON.stringify(d)); }
-function detectOwnerRepo(){ const h=window.location.hostname,p=window.location.pathname; if(h.endsWith('.github.io')){ return {owner:h.replace('.github.io',''),repo:p.split('/').filter(Boolean)[0]||'gym-training'}; } return {owner:'',repo:'gym-training'}; }
-function loadRepoSettings(){ try{ const d=detectOwnerRepo(); const s=JSON.parse(localStorage.getItem(REPO_KEY))||{}; return Object.assign({token:''},d,s); }catch{ return {token:'',owner:'',repo:'gym-training'}; } }
-function saveRepoSettings(s){ localStorage.setItem(REPO_KEY,JSON.stringify(s)); }
 
 let app = loadData();
 
@@ -635,28 +611,13 @@ function renderLogEx(){
     const d=document.createElement('div');
     d.style.cssText='background:#18181b;border:1px solid #27272a;border-radius:16px;padding:14px;margin-bottom:10px';
 
-    // Last session badge strip
-    let prevHtml='';
-    if(prev&&prev.length){
-      const filled=prev.filter(s=>s.kg>0||s.reps>0);
-      if(filled.length){
-        const badges=filled.map(s=>{
-          const ts=TS[s.t]||TS.S;
-          const abbr={W:'Wup',F:'Feed',S:'Work',C:'Clst'}[s.t]||s.t;
-          return `<span style="display:inline-flex;align-items:center;gap:2px;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:800;background:${ts.bg};color:${ts.color};border:1px solid ${ts.border};white-space:nowrap">${esc(abbr)} ${esc(String(s.kg))}&times;${esc(String(s.reps))}</span>`;
-        }).join('');
-        prevHtml=`<div style="margin-top:6px;padding-top:6px;border-top:1px solid #27272a"><span style="font-size:10px;color:#52525b;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Ant&nbsp;</span><span style="display:inline-flex;flex-wrap:wrap;gap:3px">${badges}</span></div>`;
-      }
-    } else {
-      prevHtml=`<div style="margin-top:6px;padding-top:6px;border-top:1px solid #27272a;font-size:11px;color:#52525b">Primeiro registro</div>`;
-    }
-
     const rows=ex.sets.map((s,si)=>{
       const ts=TS[s.t]||TS.S;
       const pSet=prev&&prev.filter(ps=>ps.t===s.t&&(ps.kg>0||ps.reps>0)).pop()||null;
       const hk=pSet?pSet.kg:(lastWorkSet(ex.name)?.kg||'');
       const hr=s.r.includes('-')?s.r.split('-')[1]:s.r;
       const restSec={W:60,F:90,S:180,C:180}[s.t]||180;
+      const hint=pSet&&pSet.reps>0?`<div style="font-size:10px;color:#52525b;padding:1px 0 4px 22px">ant: ${esc(String(pSet.kg))}kg × ${esc(String(pSet.reps))}</div>`:'';
       return `<div style="display:grid;grid-template-columns:16px 50px 1fr 14px 1fr 28px;align-items:center;gap:4px;padding:6px 0;border-bottom:1px solid #27272a">
         <span style="font-size:10px;color:#71717a;font-weight:700">${si+1}</span>
         <span style="padding:3px 5px;border-radius:5px;font-size:9px;font-weight:800;text-align:center;background:${ts.bg};color:${ts.color};border:1px solid ${ts.border}">${esc(ts.lbl)}</span>
@@ -664,14 +625,13 @@ function renderLogEx(){
         <span style="font-size:10px;color:#71717a;text-align:center">&times;</span>
         <input type="number" inputmode="numeric" min="0" max="50" step="1" placeholder="${esc(hr)}" data-ei="${ei}" data-si="${si}" data-f="reps" class="inp-sm log-input" />
         <button onclick="startTimer(${restSec})" style="width:28px;height:28px;border-radius:8px;background:#27272a;border:1px solid #3f3f46;font-size:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;flex-shrink:0">⏱</button>
-      </div>`;
+      </div>${hint}`;
     }).join('');
 
     d.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start;padding-left:10px;border-left:3px solid ${esc(p.color)}">
       <div style="font-size:14px;font-weight:700">${esc(ex.name)}</div>
       <div style="font-size:11px;color:#71717a;flex-shrink:0;margin-left:8px">⏱ ${esc(ex.rest)}</div>
     </div>
-    ${prevHtml}
     <div style="margin-top:6px">${rows}</div>`;
     c.appendChild(d);
   });
@@ -706,7 +666,6 @@ document.getElementById('btn-save').addEventListener('click',()=>{
   renderWeekGrid();
   document.querySelectorAll('.log-input').forEach(i=>{ i.value=''; });
   toast(`✅ ${logDay} salvo! ${exercises.length} exercícios`);
-  repoPushAuto();
 });
 
 // Export / Import
@@ -821,79 +780,6 @@ document.querySelectorAll('.timer-preset').forEach(b=>{
   b.addEventListener('click',()=> startTimer(parseInt(b.dataset.t,10)));
 });
 
-// GitHub Repo Sync
-function setSyncDot(state){
-  const d=document.getElementById('sync-dot'); if(!d)return;
-  d.style.background={idle:'#52525b',syncing:'#fbbf24',ok:'#b3ff00',err:'#f87171'}[state]||'#52525b';
-}
-
-async function repoPushAuto(){
-  const rs=loadRepoSettings();
-  if(!rs.token||!rs.owner||!rs.repo) return;
-  setSyncDot('syncing');
-  const bytes=new TextEncoder().encode(JSON.stringify(app,null,2));
-  const content=btoa(Array.from(bytes,b=>String.fromCharCode(b)).join(''));
-  const apiUrl=`https://api.github.com/repos/${encodeURIComponent(rs.owner)}/${encodeURIComponent(rs.repo)}/contents/${DATA_FILE}`;
-  let sha='';
-  try{ const r=await fetch(apiUrl,{headers:{'Authorization':`Bearer ${rs.token}`,'Accept':'application/vnd.github+json'}}); if(r.ok){const f=await r.json();sha=f.sha;} }catch{}
-  const body={message:`gym-tracker: update ${new Date().toISOString().split('T')[0]}`,content};
-  if(sha) body.sha=sha;
-  try{
-    const res=await fetch(apiUrl,{method:'PUT',headers:{'Authorization':`Bearer ${rs.token}`,'Accept':'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify(body)});
-    if(!res.ok){const e=await res.json();throw new Error(e.message||`HTTP ${res.status}`);}
-    setSyncDot('ok');
-  }catch(e){ setSyncDot('err'); toast(`⚠️ Sync falhou: ${e.message}`,true); }
-}
-
-async function repoPull(){
-  const token=document.getElementById('repo-token').value.trim();
-  const owner=document.getElementById('repo-owner').value.trim();
-  const repo=document.getElementById('repo-repo').value.trim();
-  if(!token||!owner||!repo){ toast('Preencha token, usuário e repositório!',true); return; }
-  saveRepoSettings({token,owner,repo});
-  setSyncDot('syncing');
-  try{
-    const res=await fetch(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${DATA_FILE}`,{
-      headers:{'Authorization':`Bearer ${token}`,'Accept':'application/vnd.github+json'}
-    });
-    if(!res.ok){const e=await res.json();throw new Error(e.message||`HTTP ${res.status}`);}
-    const g=await res.json();
-    const bytes=Uint8Array.from(atob(g.content.replace(/\n/g,'')),c=>c.charCodeAt(0));
-    const d=JSON.parse(new TextDecoder().decode(bytes));
-    if(!Array.isArray(d.sessions))throw new Error('Formato inválido');
-    app=d; saveData(app); renderWeekGrid();
-    document.getElementById('log-week').value=app.currentWeek;
-    renderLogEx();
-    setSyncDot('ok');
-    document.getElementById('settings-panel').classList.add('hidden');
-    toast(`✅ ${app.sessions.length} sessões carregadas!`);
-  }catch(e){ setSyncDot('err'); toast(`❌ ${e.message}`,true); }
-}
-
-function initSettings(){
-  const rs=loadRepoSettings();
-  if(rs.token) document.getElementById('repo-token').value=rs.token;
-  if(rs.owner) document.getElementById('repo-owner').value=rs.owner;
-  if(rs.repo) document.getElementById('repo-repo').value=rs.repo;
-  setSyncDot(rs.token&&rs.owner&&rs.repo?'idle':'err');
-  if(!rs.token||!rs.owner||!rs.repo) document.getElementById('settings-panel').classList.remove('hidden');
-}
-
-document.getElementById('btn-settings').addEventListener('click',()=>{
-  document.getElementById('settings-panel').classList.toggle('hidden');
-});
-document.getElementById('btn-save-settings').addEventListener('click',()=>{
-  const token=document.getElementById('repo-token').value.trim();
-  const owner=document.getElementById('repo-owner').value.trim();
-  const repo=document.getElementById('repo-repo').value.trim();
-  if(!token||!owner||!repo){ toast('Preencha todos os campos!',true); return; }
-  saveRepoSettings({token,owner,repo});
-  document.getElementById('settings-panel').classList.add('hidden');
-  setSyncDot('idle');
-  toast('⚙ Config salva! Sync automático ativo.');
-});
-document.getElementById('btn-repo-pull').addEventListener('click',repoPull);
-
 // ━━━━━━━━━━━━━━━━━ PROGRESS TAB ━━━━━━━━━━━━━━━━━
 let pChart=null;
 
@@ -976,7 +862,6 @@ renderTreinoEx();
 renderDiet();
 initLog();
 fillExSelect();
-initSettings();
 </script>
 </body>
 </html>
